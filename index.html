@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101815" />
+    <meta name="description" content="所有画面均在浏览器本地处理的低打扰实时坐姿提醒器" />
+    <title>Posture Monitor</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Posture Monitor 首页" data-i18n-aria="aria.home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Posture Monitor</span>
+        </a>
+        <div class="top-actions">
+          <span class="privacy-pill"><span>●</span> <b data-i18n="privacy.local">仅本地处理</b></span>
+          <button class="language-button" id="language-button" type="button" aria-label="Switch to English" data-i18n="language.button" data-i18n-aria="aria.language">EN</button>
+          <button class="icon-button" id="settings-button" aria-label="打开设置" data-i18n-aria="aria.settings.open">⚙</button>
+        </div>
+      </header>
+
+      <main class="shell">
+        <section class="hero panel">
+          <div class="hero-copy">
+            <p class="eyebrow" data-i18n="status.eyebrow">实时状态</p>
+            <div class="overall-row">
+              <span id="overall-dot" class="overall-dot idle"></span>
+              <div>
+                <h1 id="overall-label">尚未开始</h1>
+                <p id="status-message">启动摄像头并完成一次自然坐姿校准</p>
+              </div>
+            </div>
+            <div class="session-time">
+              <span data-i18n="session.current">当前有效监测</span>
+              <strong id="session-time">00:00:00</strong>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <button id="start-button" class="button primary">启动摄像头</button>
+            <button id="calibrate-button" class="button secondary" disabled>开始校准</button>
+            <button id="background-button" class="button secondary" disabled>开启后台小窗</button>
+            <div class="pause-wrap">
+              <button id="pause-button" class="button ghost" disabled>暂停 30 分钟</button>
+              <select id="pause-duration" aria-label="暂停时长" data-i18n-aria="aria.pauseDuration">
+                <option value="10" data-i18n="pause.10">10 分钟</option>
+                <option value="30" selected data-i18n="pause.30">30 分钟</option>
+                <option value="60" data-i18n="pause.60">60 分钟</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section id="background-health" class="background-health idle" aria-live="polite">
+          <span class="health-indicator"></span><strong>后台监测未启动</strong><small>启动摄像头后可开启置顶小窗</small>
+        </section>
+
+        <div id="alert-banner" class="alert-banner" role="alert" aria-live="assertive">
+          <strong data-i18n="alert.title">姿势持续偏离</strong><span data-i18n="alert.message">下巴轻收 · 肩膀放松 · 回到舒服的中立位</span>
+        </div>
+
+        <section class="metrics-grid" aria-label="姿势指标" data-i18n-aria="aria.metrics">
+          <article class="metric-card panel">
+            <div class="metric-icon">◌</div><div><p data-i18n="metric.head">头颈姿势</p><strong id="head-status">等待监测</strong></div><span id="head-chip" class="chip idle">—</span>
+          </article>
+          <article class="metric-card panel">
+            <div class="metric-icon">⌁</div><div><p data-i18n="metric.shoulder">肩部</p><strong id="shoulder-status">等待监测</strong></div><span id="shoulder-chip" class="chip idle">—</span>
+          </article>
+          <article class="metric-card panel">
+            <div class="metric-icon">◇</div><div><p data-i18n="metric.torso">躯干</p><strong id="torso-status">等待监测</strong></div><span id="torso-chip" class="chip idle">—</span>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="today panel">
+            <div class="section-heading"><div><p class="eyebrow">TODAY</p><h2 data-i18n="today.title">今日概览</h2></div><span id="today-date"></span></div>
+            <div class="stats-row">
+              <div><span data-i18n="stats.valid">有效监测</span><strong id="stat-total">0 分钟</strong></div>
+              <div><span data-i18n="stats.reminders">提醒次数</span><strong id="stat-reminders">0</strong></div>
+              <div><span data-i18n="stats.commonIssue">最常见问题</span><strong id="stat-issue">暂无</strong></div>
+            </div>
+            <div class="distribution">
+              <div class="distribution-label"><span><i class="legend good"></i><b data-i18n="stats.good">良好</b></span><strong id="good-percent">0%</strong></div>
+              <div class="track"><i id="good-bar" class="bar good"></i></div>
+              <div class="distribution-label"><span><i class="legend mild"></i><b data-i18n="stats.mild">轻微偏离</b></span><strong id="mild-percent">0%</strong></div>
+              <div class="track"><i id="mild-bar" class="bar mild"></i></div>
+              <div class="distribution-label"><span><i class="legend bad"></i><b data-i18n="stats.bad">需调整</b></span><strong id="bad-percent">0%</strong></div>
+              <div class="track"><i id="bad-bar" class="bar bad"></i></div>
+            </div>
+          </article>
+
+          <article class="camera-card panel">
+            <div class="section-heading"><div><p class="eyebrow">CAMERA</p><h2 data-i18n="camera.title">调试画面</h2></div><button id="debug-toggle" class="text-button" disabled>显示</button></div>
+            <div id="camera-stage" class="camera-stage hidden">
+              <video id="camera-video" playsinline muted></video><canvas id="debug-canvas"></canvas>
+              <span class="camera-local" data-i18n="camera.local">画面不离开设备</span>
+            </div>
+            <div id="camera-placeholder" class="camera-placeholder"><span>◎</span><p data-i18n="camera.hidden">摄像头预览默认隐藏</p><small data-i18n="camera.hiddenHint">显示后可检查角度和关键点</small></div>
+            <div id="debug-data" class="debug-data hidden">
+              <span>FPS <b id="debug-fps">0</b></span><span><i data-i18n="debug.confidence">置信度</i> <b id="debug-confidence">—</b></span>
+              <span><i data-i18n="debug.shoulder">肩线</i> <b id="debug-shoulder">—</b></span><span><i data-i18n="debug.torso">躯干侧歪</i> <b id="debug-torso">—</b></span>
+              <span><i data-i18n="debug.head">头颈分数</i> <b id="debug-head">—</b></span><span><i data-i18n="debug.slouch">塌陷分数</i> <b id="debug-slouch">—</b></span>
+              <span><i data-i18n="debug.phase">状态机</i> <b id="debug-phase">—</b></span><span><i data-i18n="debug.duration">超标</i> <b id="debug-duration">0s</b></span>
+              <span><i data-i18n="debug.cooldown">冷却</i> <b id="debug-cooldown">0s</b></span><span><i data-i18n="debug.baseline">基准</i> <b id="debug-baseline">未校准</b></span>
+              <span><i data-i18n="debug.movementRaw">活动原始值</i> <b id="debug-movement-raw">—</b></span><span><i data-i18n="debug.movementFiltered">活动平滑值</i> <b id="debug-movement-filtered">—</b></span>
+              <span><i data-i18n="debug.frameDelta">帧间隔</i> <b id="debug-frame-delta">—</b></span><span><i data-i18n="debug.movementFrames">连续活动帧</i> <b id="debug-movement-frames">0</b></span>
+              <span><i data-i18n="debug.visualAlert">视觉提醒</i> <b id="debug-visual-alert">未触发</b></span>
+            </div>
+          </article>
+        </section>
+
+        <section class="privacy-note">
+          <span>⌾</span><div><strong data-i18n="privacy.title">隐私优先</strong><p data-i18n="privacy.description">摄像头画面仅在浏览器本地实时处理；不上传、不录像、不截图，也不需要账户。</p></div>
+        </section>
+      </main>
+
+      <div id="calibration-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="calibration-title">
+        <div class="modal-card">
+          <button id="calibration-close" class="modal-close" aria-label="关闭" data-i18n-aria="aria.calibration.close">×</button>
+          <p class="eyebrow" data-i18n="calibration.eyebrow">个人基准</p><h2 id="calibration-title" data-i18n="calibration.title">找到舒服的中立位</h2>
+          <p data-i18n="calibration.intro">请坐到一个自然、挺拔、可以正常呼吸的姿势。下巴轻收，肩膀放松，不要刻意挺胸或夹肩胛。</p>
+          <div class="calibration-guide"><span>1</span><b data-i18n="calibration.guideHead">完整头部在画面中</b> <span>2</span><b data-i18n="calibration.guideShoulders">左右肩膀清晰可见</b> <span>3</span><b data-i18n="calibration.guideBreathing">保持自然呼吸</b></div>
+          <div id="calibration-progress-wrap" class="calibration-progress hidden"><i id="calibration-progress"></i></div>
+          <p id="calibration-feedback" class="calibration-feedback">将连续采样 4 秒，不会保存画面。</p>
+          <button id="calibration-start" class="button primary wide">开始 4 秒校准</button>
+        </div>
+      </div>
+
+      <aside id="settings-panel" class="drawer" aria-hidden="true">
+        <div class="drawer-header"><div><p class="eyebrow" data-i18n="settings.eyebrow">偏好设置</p><h2 data-i18n="settings.title">设置</h2></div><button id="settings-close" class="icon-button" aria-label="关闭设置" data-i18n-aria="aria.settings.close">×</button></div>
+        <label><span data-i18n="settings.mode">模式</span><select id="setting-mode"><option value="normal" data-i18n="settings.modeNormal">正常模式</option><option value="relaxed" data-i18n="settings.modeRelaxed">宽松模式（固定 30 秒）</option></select></label>
+        <label><span data-i18n="settings.delay">提醒延迟</span><select id="setting-delay"><option value="5" data-i18n="delay.5">5 秒</option><option value="10" data-i18n="delay.10">10 秒</option><option value="20" data-i18n="delay.20">20 秒</option><option value="30" data-i18n="delay.30">30 秒</option></select></label>
+        <label><span data-i18n="settings.sensitivity">灵敏度</span><select id="setting-sensitivity"><option value="relaxed" data-i18n="settings.relaxed">宽松</option><option value="standard" data-i18n="settings.standard">标准</option><option value="sensitive" data-i18n="settings.sensitive">灵敏</option></select></label>
+        <label><span data-i18n="settings.cooldown">冷却时间</span><select id="setting-cooldown"><option value="60" data-i18n="cooldown.1">1 分钟</option><option value="120" data-i18n="cooldown.2">2 分钟</option><option value="300" data-i18n="cooldown.5">5 分钟</option></select></label>
+        <fieldset><legend data-i18n="settings.reminders">提醒方式</legend>
+          <label class="switch-row"><span><b data-i18n="settings.desktop">桌面通知</b><small id="notification-state">需要浏览器授权</small></span><input id="setting-desktop" type="checkbox"><i></i></label>
+          <label class="switch-row"><span data-i18n="settings.sound">柔和声音</span><input id="setting-sound" type="checkbox"><i></i></label>
+          <label class="switch-row"><span data-i18n="settings.visual">页面提示</span><input id="setting-visual" type="checkbox"><i></i></label>
+        </fieldset>
+        <p class="drawer-hint" data-i18n="settings.shortcut">快捷键：Ctrl + Shift + C 可随时重新校准。重新校准不会清空今日统计。</p>
+      </aside>
+      <div id="drawer-backdrop" class="backdrop hidden"></div>
+
+      <div id="onboarding" class="modal hidden" role="dialog" aria-modal="true">
+        <div class="modal-card onboarding-card">
+          <p class="eyebrow" data-i18n="onboarding.eyebrow">开始之前</p><h2 data-i18n="onboarding.title">先放好摄像头</h2>
+          <div class="placement-art" aria-hidden="true"><span>◯</span><i></i><b>▱</b></div>
+          <ul><li data-i18n="onboarding.front">摄像头正对你，不要明显偏左或偏右</li><li data-i18n="onboarding.frame">画面包括完整头部、左右肩膀和部分上半身</li><li data-i18n="onboarding.light">保持光线充足，避免强逆光</li></ul>
+          <p class="boundary" data-i18n="onboarding.boundary">这是低打扰姿势提醒器，不是医疗设备或诊断工具。</p>
+          <button id="onboarding-continue" class="button primary wide" data-i18n="onboarding.continue">继续并授权摄像头</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

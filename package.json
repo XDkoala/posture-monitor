@@ -1,0 +1,19 @@
+{
+  "name": "posture-monitor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node node_modules/vite/bin/vite.js",
+    "build": "node node_modules/typescript/bin/tsc && node node_modules/vite/bin/vite.js build",
+    "preview": "node node_modules/vite/bin/vite.js preview",
+    "test": "node node_modules/typescript/bin/tsc --noEmit && node node_modules/esbuild/bin/esbuild tests/movement.test.ts --bundle --platform=node --format=esm --outfile=.test-dist/movement.test.mjs && node .test-dist/movement.test.mjs && node node_modules/esbuild/bin/esbuild tests/visual-alert.test.ts --bundle --platform=node --format=esm --outfile=.test-dist/visual-alert.test.mjs && node .test-dist/visual-alert.test.mjs && node node_modules/esbuild/bin/esbuild tests/i18n.test.ts --bundle --platform=node --format=esm --outfile=.test-dist/i18n.test.mjs && node .test-dist/i18n.test.mjs"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vite": "7.1.3"
+  }
+}
